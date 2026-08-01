@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import type { Env, AccountRow } from '../types';
-import { first, run } from '../db';
+import { first, run, type AnyDB } from '../db';
 import { ok, notFound, badRequest } from '../response';
 import { getAccessToken, fetchEmails, fetchEmailDetail, deleteEmail, listAttachments, getAttachment } from '../graph';
 
@@ -8,7 +8,7 @@ const emails = new Hono<{ Bindings: Env }>();
 
 // Helper: get token and auto-save rotated refresh_token
 async function getTokenAndRefresh(
-  db: D1Database,
+  db: AnyDB,
   acc: AccountRow
 ): Promise<{ token?: string; error?: string }> {
   const result = await getAccessToken(acc.client_id, acc.refresh_token);

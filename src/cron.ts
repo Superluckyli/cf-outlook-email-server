@@ -1,5 +1,5 @@
 import type { Env, AccountRow } from './types';
-import { query, first, run } from './db';
+import { query, first, run, type AnyDB } from './db';
 import { getAccessToken, fetchEmails } from './graph';
 import { sendTelegramMessage, escapeHtml } from './telegram';
 
@@ -11,12 +11,12 @@ const MAX_BATCH = 40;
 const PUSH_MAX_ACCOUNTS = 8;
 const PUSH_MAX_MSGS_PER_ACCOUNT = 3;
 
-async function getSetting(db: D1Database, key: string): Promise<string | undefined> {
+async function getSetting(db: AnyDB, key: string): Promise<string | undefined> {
   const row = await first<{ value: string }>(db, 'SELECT value FROM settings WHERE key = ?', [key]);
   return row?.value;
 }
 
-async function setSetting(db: D1Database, key: string, value: string): Promise<void> {
+async function setSetting(db: AnyDB, key: string, value: string): Promise<void> {
   await run(
     db,
     `INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)`,

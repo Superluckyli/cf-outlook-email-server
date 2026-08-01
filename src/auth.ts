@@ -1,6 +1,6 @@
 import { Context, Next } from 'hono';
 import { hmacSign, hmacVerify, hashPassword } from './utils/crypto';
-import { first } from './db';
+import { first, type AnyDB } from './db';
 import { unauthorized } from './response';
 import type { Env, SettingRow } from './types';
 
@@ -71,7 +71,7 @@ function getSessionFromCookie(cookieHeader: string | null): string | null {
 
 // Verify login password against stored hash or ADMIN_PASSWORD secret
 export async function verifyPassword(
-  db: D1Database,
+  db: AnyDB,
   password: string,
   adminPassword: string
 ): Promise<boolean> {

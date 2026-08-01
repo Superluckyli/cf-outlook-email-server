@@ -1,7 +1,9 @@
-// Worker environment bindings
+// Worker environment bindings (Cloudflare) / self-hosted env (Node server)
+import type { ServerDatabase } from './server-db';
+
 export interface Env {
-  DB: D1Database;
-  ASSETS: Fetcher;
+  DB: D1Database | ServerDatabase;
+  ASSETS?: Fetcher;
   ADMIN_PASSWORD: string;
   COOKIE_SECRET: string;
   GPTMAIL_API_KEY?: string;

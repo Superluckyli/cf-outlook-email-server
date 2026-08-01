@@ -1,0 +1,31 @@
+# Self-hosted Outlook 邮箱管理 (server edition)
+# Fronted by Caddy: otp.superluckyli.cc.cd -> outlook-email:8787
+services:
+  outlook-email:
+    build: .
+    image: outlook-email:server
+    container_name: outlook-email
+    restart: unless-stopped
+    environment:
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD in .env}
+      COOKIE_SECRET: ${COOKIE_SECRET:?set COOKIE_SECRET in .env}
+      GPTMAIL_API_KEY: ${GPTMAIL_API_KEY:-}
+      DB_PATH: /data/outlook-email.db
+      PORT: "8787"
+      CRON_INTERVAL_MS: "21600000"
+    ports:
+      - "127.0.0.1:8787:8787"
+    volumes:
+      - outlook-email-data:/data
+    # Join the existing Caddy reverse-proxy network so Caddy can reach the app
+    networks:
+      - default
+      - cpa
+
+volumes:
+  outlook-email-data:
+
+networks:
+  cpa:
+    external: true
+    name: cliproxyapi_cpa

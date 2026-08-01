@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import type { Env, TempEmailRow, SettingRow } from '../types';
-import { query, first, run } from '../db';
+import { query, first, run, type AnyDB } from '../db';
 import { ok, badRequest, notFound, serverError } from '../response';
 
 const GPTMAIL_BASE_URL = 'https://mail.chatgpt.org.uk';
@@ -8,7 +8,7 @@ const GPTMAIL_BASE_URL = 'https://mail.chatgpt.org.uk';
 const tempEmails = new Hono<{ Bindings: Env }>();
 
 // Helper: get GPTMail API key from settings or env
-async function getApiKey(db: D1Database, envKey?: string): Promise<string> {
+async function getApiKey(db: AnyDB, envKey?: string): Promise<string> {
   const row = await first<SettingRow>(db, "SELECT value FROM settings WHERE key = 'gptmail_api_key'");
   if (row?.value) return row.value;
   return envKey ?? '';

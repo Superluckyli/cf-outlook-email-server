@@ -894,7 +894,17 @@ window.addEventListener('message', function(e) {
 function showImportModal() {
   showModal(t('批量导入'), `
     <div class="form-group"><label class="form-label">${t('分组')}</label><select class="form-select" id="mImpGroup">${state.groups.map(g => `<option value="${g.id}">${esc(g.name)}</option>`).join('')}</select></div>
-    <div class="form-group"><label class="form-label">${t('账号数据 (每行一个: 邮箱----密码----client_id----refresh_token)')}</label><textarea class="form-textarea" id="mImpData" rows="8" placeholder="email----password----client_id----refresh_token"></textarea></div>
+    <div class="form-group">
+      <label class="form-label">${t('从文件导入')}</label>
+      <div id="mImpDropZone" style="border:2px dashed var(--border-focus);border-radius:10px;padding:20px 16px;text-align:center;cursor:pointer;transition:all .2s;background:var(--primary-bg);margin-bottom:12px">
+        <div style="font-size:28px;margin-bottom:6px">📁</div>
+        <div style="font-size:13px;color:var(--text-muted)">${t('点击选择文件 或 拖拽 .txt / .csv 文件到此处')}</div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:4px">${t('格式: 邮箱----密码----client_id----refresh_token')}</div>
+        <div id="mImpFileName" style="font-size:12px;color:var(--primary);margin-top:6px;min-height:16px"></div>
+      </div>
+      <input type="file" id="mImpFileInput" accept=".txt,.csv" style="display:none">
+    </div>
+    <div class="form-group"><label class="form-label">${t('账号数据 (每行一个)')}</label><textarea class="form-textarea" id="mImpData" rows="8" placeholder="email----password----client_id----refresh_token"></textarea></div>
   `, async () => {
     const data = document.getElementById('mImpData').value.trim();
     if (!data) { toast(t('请输入账号数据'), 'error'); return false; }
@@ -906,6 +916,41 @@ function showImportModal() {
     toast(res?.error?.message || t('导入失败'), 'error');
     return false;
   });
+
+  // ---- File upload + drag-drop wiring ----
+  const dropZone = document.getElementById('mImpDropZone');
+  const fileInput = document.getElementById('mImpFileInput');
+  const textarea = document.getElementById('mImpData');
+  const fileNameEl = document.getElementById('mImpFileName');
+
+  function readFile(file) {
+    if (!file) return;
+    if (!file.name.match(/\.(txt|csv)$/i)) {
+      toast(t('请上传 .txt 或 .csv 格式的文件'), 'error');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target?.result;
+      if (!content) { toast(t('文件内容为空'), 'error'); return; }
+      const newContent = content.trim();
+      const existing = textarea.value.trim();
+      // Append instead of overwrite: merge files / pasted content
+      textarea.value = existing ? existing + '\n' + newContent : newContent;
+      const lineCount = textarea.value.split('\n').filter(Boolean).length;
+      fileNameEl.textContent = '✅ ' + file.name + ' (' + newContent.split('\n').filter(Boolean).length + t(' 条, 共 ') + lineCount + t(' 条)');
+      dropZone.style.borderColor = 'var(--primary)';
+      dropZone.style.background = 'rgba(99,102,241,0.05)';
+    };
+    reader.onerror = () => toast(t('读取文件失败'), 'error');
+    reader.readAsText(file);
+  }
+
+  dropZone.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', () => readFile(fileInput.files[0]));
+  dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.borderColor = 'var(--primary)'; dropZone.style.background = 'rgba(99,102,241,0.08)'; });
+  dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = 'var(--border-focus)'; dropZone.style.background = 'var(--primary-bg)'; });
+  dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.style.borderColor = 'var(--border-focus)'; dropZone.style.background = 'var(--primary-bg)'; readFile(e.dataTransfer.files[0]); });
 }
 
 async function showEditAccountModal(id) {
