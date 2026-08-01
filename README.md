@@ -1,156 +1,155 @@
-# 📬 Outlook 邮件管理
+# 📬 Outlook 邮件管理（服务器自部署版）
 
 <div align="center">
 
-**基于 Cloudflare Workers 的轻量级 Outlook 邮件管理工具**
+**基于 Node.js + SQLite + Docker 的 Outlook 邮件管理工具（Hono 框架）**
 
-🆓 完全免费 · ☁️ 无需服务器 · 🌍 全球加速 · 🌗 深浅主题 · 🌐 中英双语
+🖥️ 自托管 · 🐳 Docker 部署 · 💾 SQLite 存储 · 🌗 深浅主题 · 🌐 中英双语
 
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL%203.0-blue.svg)](./LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8+-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-F38020?logo=cloudflare&logoColor=white)](https://workers.cloudflare.com/)
 [![Hono](https://img.shields.io/badge/Hono-4-E36002?logo=hono&logoColor=white)](https://hono.dev/)
-[![D1](https://img.shields.io/badge/D1-SQLite-003B57?logo=sqlite&logoColor=white)](https://developers.cloudflare.com/d1/)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/roseforyou/cf-outlook-email/pulls)
-
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/roseforyou/cf-outlook-email)
-
-⚠️ 此按钮**无法一键部署**：项目依赖 D1 数据库与 Secret，需手动建库、跑迁移、设密钥，按钮会因框架检测失败而报错。请按 📖 [详细部署教程](./docs/GUIDE.md) 操作（约 5 分钟）。
-
-🌐 [English](./README_EN.md) · 📖 [详细部署教程](./docs/GUIDE.md) · 🔌 [对外 API 文档](./docs/API.md)
+[![Node](https://img.shields.io/badge/Node.js-22+-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://docker.com/)
 
 </div>
 
----
+> ⚠️ 本项目是 [roseforyou/cf-outlook-email](https://github.com/roseforyou/cf-outlook-email) 的**服务器自部署版**：
+> 将原本运行在 Cloudflare Workers 上的应用改造为可在你自己的服务器上运行。
+> 数据存储在本机 SQLite，不再依赖 Cloudflare 账户。
 
-| 🌙 深色模式 | ☀️ 浅色模式 |
-|:---:|:---:|
-| ![深色模式](./docs/preview.png) | ![浅色模式](./docs/preview-light.png) |
+---
 
 ## ✨ 特性
 
 - 🔐 **一键授权** — 浏览器弹窗登录微软账号，自动获取凭证，无需手动复制 token
-- 🔄 **Token 自动续期** — 每次读邮件自动刷新 token，只要定期使用就不会过期
+- 🔄 **Token 自动续期** — 内置定时任务自动刷新 token，只要定期使用就不会过期
 - 📦 **批量管理** — 批量导入/导出/删除/移组，支持单条与选中导出、分组和状态筛选
+- 📂 **文件导入** — 支持点击选择或拖拽 `.txt` / `.csv` 文件批量导入，多次拖拽自动追加
 - 📨 **邮件阅读** — 通过 Microsoft Graph API 实时读取，支持收件箱/垃圾箱/已删除文件夹切换、聚合视图、分页加载、搜索和 HTML 渲染
 - 📭 **临时邮箱** — 集成 GPTMail API，一键生成临时邮箱接收邮件
 - 🎨 **精致主题** — 深色/浅色/跟随系统，毛玻璃质感 + 圆形扫掠切换 + 低频呼吸光晕
 - 🌐 **中英双语** — 默认中文，顶栏一键切换 English，偏好本地记忆，后端消息同步翻译
-- 🆓 **完全免费** — 运行在 Cloudflare 免费层，无需信用卡
+- 💾 **数据自持** — SQLite 存在 Docker 卷中，数据完全归你所有
 
-## 🚀 快速部署
+## 🚀 Docker 部署
 
-> 💡 完整步骤请看 [详细部署教程](./docs/GUIDE.md)
+### 前置要求
+
+- Docker 20.10+ 与 Docker Compose v2
+- Node.js 22+（仅构建/开发时需要，运行时在容器内）
+
+### 快速开始
 
 ```bash
-# 1. 克隆 & 安装
-git clone https://github.com/roseforyou/cf-outlook-email.git
-cd cf-outlook-email
-pnpm install
+# 1. 克隆
+git clone https://github.com/Superluckyli/cf-outlook-email-server.git
+cd cf-outlook-email-server
 
-# 2. 登录 Cloudflare
-pnpm exec wrangler login
+# 2. 配置环境变量
+cp .env.example .env
+# 编辑 .env，设置 ADMIN_PASSWORD（登录密码）和 COOKIE_SECRET（至少 32 位随机串）
 
-# 3. 创建数据库（把输出的 database_id 填入 wrangler.toml）
-pnpm exec wrangler d1 create outlook-email-db
-cp wrangler.toml.example wrangler.toml
-# 编辑 wrangler.toml，替换 REPLACE_WITH_YOUR_DATABASE_ID
+# 3. 构建并启动
+docker compose up -d --build
 
-# 4. 配置密码
-pnpm exec wrangler secret put ADMIN_PASSWORD
-pnpm exec wrangler secret put COOKIE_SECRET
-
-# 5. 初始化 & 部署
-pnpm exec wrangler d1 migrations apply outlook-email-db --remote
-pnpm exec wrangler deploy
+# 4. 访问
+# http://<你的服务器IP>:8787
 ```
 
-部署完成后访问输出的 URL，用设置的密码登录即可。🎉
+### 环境变量
 
-## 📮 添加邮箱
+| 变量 | 必填 | 默认值 | 说明 |
+|---|---|---|---|
+| `ADMIN_PASSWORD` | ✅ | - | 管理面板登录密码 |
+| `COOKIE_SECRET` | ✅ | - | 会话签名密钥（至少 32 位随机字符） |
+| `GPTMAIL_API_KEY` | ❌ | - | GPTMail API Key（临时邮箱功能） |
+| `PORT` | ❌ | `8787` | 监听端口 |
+| `DB_PATH` | ❌ | `/data/outlook-email.db` | SQLite 数据库文件路径 |
+| `CRON_INTERVAL_MS` | ❌ | `21600000` | Token 刷新定时任务间隔（毫秒，默认 6 小时） |
 
-登录后点击 **添加账号** → **一键授权** → 弹出微软登录窗口 → 授权后自动填入凭证 → 保存。
+### 反向代理（推荐）
 
-支持所有 Outlook / Hotmail / Live 邮箱，也支持批量导入（格式：`邮箱----密码----client_id----refresh_token`）。
+生产环境建议用 Caddy / Nginx 提供 HTTPS 反代：
+
+```caddyfile
+# Caddy 示例
+otp.example.com {
+    reverse_proxy outlook-email:8787
+}
+```
+
+## 🔄 从 Cloudflare 版迁移
+
+两版代码完全同源（同一套路由与前端），差异仅在运行时：
+
+| | Cloudflare 版 | 本仓库（服务器版） |
+|---|---|---|
+| 运行时 | Cloudflare Workers | Node.js 22 |
+| 数据库 | Cloudflare D1 | SQLite（`node:sqlite` 内置） |
+| 静态文件 | Cloudflare Assets | `public/` 目录直出 |
+| 定时任务 | `scheduled` cron trigger | 进程内 `setInterval` |
+| 数据归属 | Cloudflare 账户 | 你的服务器 |
+
+> 💡 数据库不兼容：D1 与本地 SQLite 是两套独立数据，账号需重新导入。
 
 ## 🧱 技术栈
 
 | 层 | 技术 |
 |---|---|
-| ⚙️ 运行时 | Cloudflare Workers (TypeScript) |
-| 🧭 路由 | Hono |
-| 🗄️ 数据库 | Cloudflare D1 (SQLite) |
-| 🎨 前端 | 原生 HTML/CSS/JS |
-| 📧 邮件 | Microsoft Graph API |
-| 🚀 部署 | Wrangler |
+| ⚙️ 运行时 | Node.js 22 + Hono |
+| 🗄️ 数据库 | SQLite（`node:sqlite`，通过 D1 兼容适配层 `src/server-db.ts`） |
+| 📄 模板 | 原生 HTML/JS/CSS（`public/`） |
+| 🐳 部署 | Docker + Docker Compose |
+| 📨 邮件 | Microsoft Graph API（OAuth2 refresh_token） |
 
-## 🗂️ 项目结构
+## 📁 项目结构
 
 ```
-src/                     后端源码（Worker）
-├── index.ts             入口 + 路由
-├── auth.ts              HMAC-SHA256 Cookie 鉴权
-├── graph.ts             Graph API 集成
-├── routes/              业务路由（6 个模块）
-└── utils/               加密、校验工具
-public/                  前端（静态 SPA）
-migrations/              D1 数据库建表
-tools/                   辅助脚本
+├── src/
+│   ├── server.ts          # Node 服务器入口（静态文件 + API + 定时任务）
+│   ├── server-db.ts       # D1 兼容 SQLite 适配层
+│   ├── db.ts              # 数据库辅助函数（query/first/run/batch）
+│   ├── routes/            # API 路由（auth/accounts/emails/groups/tags...）
+│   ├── graph.ts           # Microsoft Graph API 客户端
+│   ├── cron.ts            # Token 刷新 + 新邮件推送定时任务
+│   └── auth.ts            # 会话认证中间件
+├── public/                # 前端静态文件
+├── migrations/            # 数据库迁移 SQL
+├── Dockerfile
+└── docker-compose.yml
 ```
 
-## 💰 免费额度
+## 🔧 本地开发
 
-| 资源 | 免费额度 | 够用？ |
-|------|----------|:------:|
-| ⚡ Workers 请求 | 10 万/天 | ✅ |
-| ⏱️ CPU 时间 | 10ms/请求 | ✅ |
-| 🌐 外部请求 | 50/次 | ✅ (单账号单请求) |
-| 💾 D1 存储 | 5 GB | ✅ |
+```bash
+pnpm install
+export ADMIN_PASSWORD=test123 COOKIE_SECRET=your_secret_here
+pnpm run serve
+# 访问 http://localhost:8787
+```
 
-## 🗺️ 路线图
+## 📮 添加邮箱
 
-**核心功能（已实现）**
+登录后点击 **添加账号** → **一键授权** → 弹出微软登录窗口 → 授权后自动填入凭证 → 保存。
 
-- [x] 🔐 一键 OAuth 授权 & Token 自动续期
-- [x] 👤 邮箱账号管理（增 / 删 / 改 / 查、测试连接）
-- [x] 🗂️ 分组管理（自定义颜色、按分组与状态筛选）
-- [x] 📦 批量导入 / 导出 / 删除 / 移组
-- [x] 📤 单条 / 选中导出
-- [x] 📨 邮件阅读（实时收件、搜索、HTML 渲染）
-- [x] 📁 文件夹切换（收件箱 / 垃圾箱 / 已删除）
-- [x] 🔀 聚合视图（收件箱 + 垃圾箱合并按时间排序，找验证码神器）
-- [x] 📄 分页加载（加载更多）
-- [x] 📭 临时邮箱（集成 GPTMail）
-- [x] 🎨 主题切换 + 圆形扫掠过渡 + 呼吸光晕
-- [x] 🔑 对外 API + API Key（免登录拉取邮件，自动化取验证码，见 [API 文档](./docs/API.md)）
-- [x] 🗑️ 删除邮件（单条 / 批量，软删除到「已删除」）
-- [x] 📎 附件下载
-- [x] 🏷️ 标签系统（一个账号多标签，跨分组筛选）
-- [x] ⏰ 定时刷新 Token（Cron Trigger，可配间隔/批量，自动保活账号）
-- [x] 🤖 Telegram 推送新邮件（Cron 轮询，新邮件实时推送到 Telegram，可配间隔）
-- [x] 🧭 界面打磨（页面级工具栏、仪表盘健康度卡片、设置页响应式网格、账号表分页、可搜索账号下拉）
-- [x] 🌐 界面国际化（默认中文，一键切换 English）
+支持所有 Outlook / Hotmail / Live 邮箱，也支持批量导入（格式：`邮箱----密码----client_id----refresh_token`），或直接拖拽文件导入。
 
-**计划中（欢迎 PR）**
+## 🐛 常见问题
 
-- [ ] 🔔 更多推送渠道（企业微信 / 钉钉等）
+**Q: 转圈/加载慢？**
+A: 查看邮件时需实时调用微软 Graph API，网络到微软服务慢时会有延迟，属正常现象。
 
-> ⚠️ 受 Cloudflare Workers 平台限制，以下功能无法实现：IMAP（Gmail / QQ / 163 等非微软邮箱）、SMTP 转发、HTTP/SOCKS5 代理。
+**Q: 如何备份数据？**
+A: 备份 Docker 卷 `outlook-email-data`（或直接复制 `/data/outlook-email.db` 文件）。
 
-## ⚠️ 免责声明
+**Q: 支持中文吗？**
+A: 支持，默认中文界面，顶栏可切换英文。
 
-本项目仅供个人学习和管理自己的邮箱使用。请确保你对所管理的邮箱账号拥有合法授权，不得用于未授权访问他人邮箱或其他违法用途。默认 Client ID 为 Mozilla Thunderbird 公开 ID，仅供快速体验，正式使用建议[注册自己的 Azure 应用](./docs/GUIDE.md#自己注册-azure-应用)。使用者应自行承担因不当使用产生的一切法律责任，作者不承担任何责任。
+## 📄 许可
+
+[GPL-3.0](./LICENSE)
 
 ## 🙏 致谢
 
-本项目基于 [xiaozhi349/outlookEmail](https://github.com/xiaozhi349/outlookEmail) 改造而来。原项目为 Python Flask + SQLite 实现，本项目将其迁移至 Cloudflare Workers + D1，并重写了前后端代码。感谢原作者的工作。
-
-## 友情链接
-
-[LINUX DO](https://linux.do/) —— 新的理想型社区，技术爱好者的聚集地。
-
-## 📜 许可证
-
-[![License: GPL-3.0](https://img.shields.io/badge/License-GPL%203.0-blue.svg)](./LICENSE)
-
-基于 **GPL-3.0** 协议开源。你可以自由使用、修改和分发本项目，但任何分发的衍生作品也必须以 GPL-3.0 协议开源并提供完整源代码。
+前端与业务逻辑源自 [roseforyou/cf-outlook-email](https://github.com/roseforyou/cf-outlook-email)（GPL-3.0），本仓库为服务器自部署适配版。
